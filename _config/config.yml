@@ -3,4 +3,4 @@ Name: silverstripe-mailgun
 ---
 Injector:
   Mailer:
-    class: 'Kinglozzer\SilverStripeMailgun\Mailer'
+    class: 'Kinglozzer\SilverStripeMailgunner\Mailer'
