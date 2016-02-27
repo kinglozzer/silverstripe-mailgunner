@@ -45,7 +45,7 @@ class Mailer extends SilverstripeMailer
     protected $tempFileHandles = [];
 
     /**
-     * @var Mailgun\Mailgun
+     * @var Mailgun
      */
     protected $mailgunClient;
 
@@ -64,7 +64,7 @@ class Mailer extends SilverstripeMailer
     }
 
     /**
-     * @param Mailgun\Mailgun $client
+     * @param Mailgun $client
      * @return self
      */
     public function setMailgunClient(Mailgun $client)
@@ -74,7 +74,7 @@ class Mailer extends SilverstripeMailer
     }
 
     /**
-     * @return Mailgun\Mailgun
+     * @return Mailgun
      */
     public function getMailgunClient()
     {
@@ -129,13 +129,12 @@ class Mailer extends SilverstripeMailer
     }
 
     /**
-     * @param Mailgun\Messages\MessageBuilder $messageBuilder
+     * @param MessageBuilder $builder
      * @param string $to
      * @param string $from
      * @param string $subject
      * @param string $content
      * @param string $plainContent
-     * @param array $attachments
      * @param array $headers
      */
     protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $headers)
