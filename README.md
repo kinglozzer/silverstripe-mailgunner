@@ -1,5 +1,10 @@
 # SilverStripe Mailgunner
 
+[![Build Status](http://img.shields.io/travis/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](https://travis-ci.org/kinglozzer/silverstripe-mailgunner)
+[![Code Quality](http://img.shields.io/scrutinizer/g/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](https://scrutinizer-ci.com/g/kinglozzer/silverstripe-mailgunner)
+[![Version](http://img.shields.io/packagist/v/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](https://packagist.org/packages/kinglozzer/silverstripe-mailgunner)
+[![License](http://img.shields.io/packagist/l/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](LICENSE.md)
+
 A SilverStripe `Mailer` class to send emails via the [Mailgun](http://www.mailgun.com/) API.
 
 ## Installation:
