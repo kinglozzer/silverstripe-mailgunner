@@ -25,5 +25,7 @@ script:
   - vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover mailgunner/tests/
 
 after_script:
+  - mv coverage.clover mailgunner/coverage.clover
+  - cd mailgunner
   - wget https://scrutinizer-ci.com/ocular.phar
-  - php ocular.phar code-coverage:upload --format=php-clover --repository=g/kinglozzer/silverstripe-mailgunner coverage.clover
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
