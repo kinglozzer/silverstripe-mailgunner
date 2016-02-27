@@ -60,7 +60,12 @@ class MailerTest extends \SapphireTest
             'Important question', // subject
             '<p>How much foo could a foo bar baz if a baz bam could bar foo?</p>', // html content
             'How much foo could a foo bar baz if a baz bam could bar foo?', // plain text content
-            ['filename.jpg'], // attachments
+            [
+                [
+                    'filename' => 'filename.jpg',
+                    'contents' => 'abcdefg'
+                ]
+            ], // attachments
             [
                 'X-Custom-Header' => 'foo',
                 'Cc' => 'bar@baz.com',
@@ -169,6 +174,38 @@ class MailerTest extends \SapphireTest
             ->method('closeTempFileHandles');
 
         // Let's go!
+        $this->invokeMethod(
+            $mailer,
+            'sendMessage',
+            [$to, $from, $subject, $content, $plainContent, $attachments, $headers]
+        );
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testSendMessageExceptionClosesHandles()
+    {
+        list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
+
+        $client = $this->getMock('Mailgun\Mailgun', ['sendMessage']);
+        // Make our mock client trigger an exception
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->will($this->throwException(new \Exception));
+
+        $mailer = $this->getMock(
+            'Kinglozzer\SilverStripeMailgunner\Mailer',
+            ['getMailgunClient', 'closeTempFileHandles']
+        );
+        // Inject our mock Mailgun client
+        $mailer->expects($this->once())
+            ->method('getMailgunClient')
+            ->will($this->returnValue($client));
+        // Assert that the exception that the client throws triggers closing open file handles
+        $mailer->expects($this->once())
+            ->method('closeTempFileHandles');
+
         $this->invokeMethod(
             $mailer,
             'sendMessage',
