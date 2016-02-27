@@ -71,7 +71,7 @@ class MailerTest extends \SapphireTest
 
     public function testSendPlain()
     {
-       list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
+        list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
 
         $mailer = $this->getMock('Kinglozzer\SilverStripeMailgunner\Mailer', ['sendMessage']);
         $mailer->expects($this->once())
@@ -162,7 +162,7 @@ class MailerTest extends \SapphireTest
         // prepareAttachments() and specify a mock "prepared" return value
         $mailer->expects($this->once())
             ->method('prepareAttachments')
-            ->with( $this->equalTo($attachments))
+            ->with($this->equalTo($attachments))
             ->will($this->returnValue(['preparedattachments']));
         // Assert that the mailer attempts to close any remaining open file handles
         $mailer->expects($this->once())

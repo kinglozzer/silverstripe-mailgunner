@@ -197,7 +197,7 @@ class Mailer extends SilverstripeMailer
             ];
         }
 
-       return ['attachment' => $prepared];
+        return ['attachment' => $prepared];
     }
 
     /**
