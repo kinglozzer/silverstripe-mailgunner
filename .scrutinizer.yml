@@ -67,3 +67,7 @@ checks:
 
 filter:
   paths: [src/*, tests/*]
+
+tools:
+  external_code_coverage:
+    timeout: 600
