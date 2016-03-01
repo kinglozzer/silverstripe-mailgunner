@@ -111,11 +111,11 @@ class Mailer extends SilverstripeMailer
         $domain = $this->config()->api_domain;
         $client = $this->getMailgunClient();
 
-        if(isset($headers['X-Mailgunner-Batch-Message'])) {
-            $messageBuilder = $client->BatchMessage($domain);
+        if (isset($headers['X-Mailgunner-Batch-Message'])) {
+            $builder = $client->BatchMessage($domain);
             unset($headers['X-Mailgunner-Batch-Message']);
         } else {
-            $messageBuilder = $client->MessageBuilder();
+            $builder = $client->MessageBuilder();
         }
         
         if (!empty($attachments)) {
@@ -123,12 +123,12 @@ class Mailer extends SilverstripeMailer
         }
 
         try {
-            $this->buildMessage($messageBuilder, $to, $from, $subject, $content, $plainContent, $attachments, $headers);
+            $this->buildMessage($builder, $to, $from, $subject, $content, $plainContent, $attachments, $headers);
 
-            if ($messageBuilder instanceof \Mailgun\Messages\BatchMessage) {
-                $messageBuilder->finalize();
+            if ($builder instanceof \Mailgun\Messages\BatchMessage) {
+                $builder->finalize();
             } else {
-                $client->sendMessage($domain, $messageBuilder->getMessage(), $messageBuilder->getFiles());
+                $client->sendMessage($domain, $builder->getMessage(), $builder->getFiles());
             }
         } catch (\Exception $e) {
             // Close and remove any temp files created for attachments, then let the exception bubble up
@@ -146,11 +146,19 @@ class Mailer extends SilverstripeMailer
      * @param string $subject
      * @param string $content
      * @param string $plainContent
-     * @param string $attachments
+     * @param array $attachments
      * @param array $headers
      */
-    protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $attachments, $headers)
-    {
+    protected function buildMessage(
+        MessageBuilder $builder,
+        $to,
+        $from,
+        $subject,
+        $content,
+        $plainContent,
+        array $attachments,
+        array $headers
+    ) {
         // Add base info
         $parsedFrom = $this->parseAddresses($from);
         if (!empty($parsedFrom)) {
@@ -245,7 +253,7 @@ class Mailer extends SilverstripeMailer
      * Prepare attachments for sending. SilverStripe extracts the content and
      * passes that to the mailer, so to save encoding it we just write them all
      * to individual files and let Mailgun deal with the rest.
-     * 
+     *
      * @todo Can we handle this better?
      * @param array $attachments
      * @return array
