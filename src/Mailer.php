@@ -110,16 +110,13 @@ class Mailer extends SilverstripeMailer
     {
         $domain = $this->config()->api_domain;
         $client = $this->getMailgunClient();
+        $attachments = $this->prepareAttachments($attachments);
 
         if (isset($headers['X-Mailgunner-Batch-Message'])) {
             $builder = $client->BatchMessage($domain);
             unset($headers['X-Mailgunner-Batch-Message']);
         } else {
             $builder = $client->MessageBuilder();
-        }
-        
-        if (!empty($attachments)) {
-            $attachments = $this->prepareAttachments($attachments);
         }
 
         try {
@@ -161,44 +158,26 @@ class Mailer extends SilverstripeMailer
     ) {
         // Add base info
         $parsedFrom = $this->parseAddresses($from);
-        if (!empty($parsedFrom)) {
-            foreach ($parsedFrom as $email => $name) {
-                $builder->setFromAddress($email, ['full_name' => $name]);
-            }
-        } else {
-            $builder->setFromAddress($from);
+        foreach ($parsedFrom as $email => $name) {
+            $builder->setFromAddress($email, ['full_name' => $name]);
         }
         
         $builder->setSubject($subject);
-
-        // HTML content (if not empty)
-        if ($content) {
-            $builder->setHtmlBody($content);
-        }
-
-        // Plain text content (if not empty)
-        if ($plainContent) {
-            $builder->setTextBody($plainContent);
-        }
+        $builder->setHtmlBody($content);
+        $builder->setTextBody($plainContent);
 
         // Add attachments
-        if (!empty($attachments)) {
-            foreach ($attachments as $attachment) {
-                $builder->addAttachment($attachment['filePath'], $attachment['remoteName']);
-            }
+        foreach ($attachments as $attachment) {
+            $builder->addAttachment($attachment['filePath'], $attachment['remoteName']);
         }
 
         // Parse Cc & Bcc headers out if they're set
-        $ccAddresses = $bccAddresses = '';
-        if (isset($headers['Cc'])) {
-            $ccAddresses = $headers['Cc'];
-            unset($headers['Cc']);
-        }
+        $ccAddresses = isset($headers['Cc']) ? $headers['Cc'] : '';
+        $bccAddresses = isset($headers['Bcc']) ? $headers['Bcc'] : '';
 
-        if (isset($headers['Bcc'])) {
-            $bccAddresses = $headers['Bcc'];
-            unset($headers['Bcc']);
-        }
+        // We handle these ourselves, so can remove them from the list of headers
+        unset($headers['Cc']);
+        unset($headers['Bcc']);
 
         // Add remaining custom headers
         foreach ($headers as $name => $data) {
