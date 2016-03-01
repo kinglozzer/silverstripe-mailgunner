@@ -140,7 +140,6 @@ class Mailer extends SilverstripeMailer
     protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $headers)
     {
         // Add base info
-        $builder->addToRecipient($to);
         $builder->setFromAddress($from);
         $builder->setSubject($subject);
 
@@ -155,23 +154,31 @@ class Mailer extends SilverstripeMailer
         }
 
         // Parse Cc & Bcc headers out if they're set
+        $ccAddresses = $bccAddresses = [];
         if (isset($headers['Cc'])) {
-            foreach (explode(', ', $headers['Cc']) as $ccAddress) {
-                $builder->addCcRecipient($ccAddress);
-            }
+            $ccAddresses = explode(', ', $headers['Cc']);
             unset($headers['Cc']);
         }
 
         if (isset($headers['Bcc'])) {
-            foreach (explode(', ', $headers['Bcc']) as $bccAddress) {
-                $builder->addBccRecipient($bccAddress);
-            }
+            $bccAddresses = explode(', ', $headers['Bcc']);
             unset($headers['Bcc']);
         }
 
         // Add remaining custom headers
         foreach ($headers as $name => $data) {
             $builder->addCustomHeader($name, $data);
+        }
+
+        // Add recipients
+        $builder->addToRecipient($to);
+
+        foreach ($ccAddresses as $ccAddress) {
+            $builder->addCcRecipient($ccAddress);
+        }
+
+        foreach ($bccAddresses as $bccAddress) {
+            $builder->addBccRecipient($bccAddress);
         }
     }
 
