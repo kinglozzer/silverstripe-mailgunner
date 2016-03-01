@@ -108,8 +108,15 @@ class Mailer extends SilverstripeMailer
      */
     protected function sendMessage($to, $from, $subject, $content, $plainContent, $attachments, $headers)
     {
+        $domain = $this->config()->api_domain;
         $client = $this->getMailgunClient();
-        $messageBuilder = $client->MessageBuilder();
+
+        if(isset($headers['X-Mailgunner-Batch-Message'])) {
+            $messageBuilder = $client->BatchMessage($domain);
+            unset($headers['X-Mailgunner-Batch-Message']);
+        } else {
+            $messageBuilder = $client->MessageBuilder();
+        }
         
         if (!empty($attachments)) {
             $attachments = $this->prepareAttachments($attachments);
@@ -117,7 +124,12 @@ class Mailer extends SilverstripeMailer
 
         try {
             $this->buildMessage($messageBuilder, $to, $from, $subject, $content, $plainContent, $attachments, $headers);
-            $client->sendMessage($this->config()->api_domain, $messageBuilder->getMessage(), $messageBuilder->getFiles());
+
+            if ($messageBuilder instanceof \Mailgun\Messages\BatchMessage) {
+                $messageBuilder->finalize();
+            } else {
+                $client->sendMessage($domain, $messageBuilder->getMessage(), $messageBuilder->getFiles());
+            }
         } catch (\Exception $e) {
             // Close and remove any temp files created for attachments, then let the exception bubble up
             $this->closeTempFileHandles();
@@ -185,7 +197,8 @@ class Mailer extends SilverstripeMailer
             $builder->addCustomHeader($name, $data);
         }
 
-        // Add recipients
+        // Add recipients. This is done last as the 'BatchMessage' message builder
+        // will trigger sends for every 1000 addresses
         $to = $this->parseAddresses($to);
         foreach ($to as $email => $name) {
             $builder->addToRecipient($email, ['full_name' => $name]);

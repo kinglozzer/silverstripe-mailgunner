@@ -37,6 +37,24 @@ Kinglozzer\SilverStripeMailgunner\Mailer:
   api_version: '8932206e'
 ```
 
+## Batch messages:
+
+You can send an email to a group of recipients via a single API call (without using Cc or Bcc) using Mailgun’s [batch sending](https://documentation.mailgun.com/user_manual.html#batch-sending) functionality. This tells Mailgun to send each recipient an email with only their name in the `to` field. Not using this functionality would result in _all_ recipients’ email addresses being displayed in the `to` field.
+
+To send a batch email, simply pass all the email addresses you want to send to as the `to` field, and add an `X-Mailgunner-Batch-Message` header:
+
+```php
+$email = Email::create(
+	$from = 'noreply@example.com',
+	$to = 'user1@example.com, user2@example.com',
+	$subject = 'My awesome email',
+	$content = 'Hello world!'
+);
+
+$email->addCustomHeader('X-Mailgunner-Batch-Message', true);
+$email->send();
+```
+
 ## SilverStripe version compatiblity:
 
 This module has only been tested with SilverStripe 3.2, but may work with previous versions. In older versions of SilverStripe, you will need to specify the `Mailer` implementation to use in `_config.php`:

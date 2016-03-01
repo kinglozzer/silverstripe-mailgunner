@@ -188,6 +188,74 @@ class MailerTest extends \SapphireTest
         );
     }
 
+    public function testSendMessageBatch()
+    {
+        $domain = 'http://testdomain.com';
+        Config::inst()->update('Kinglozzer\SilverStripeMailgunner\Mailer', 'api_domain', $domain);
+        list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
+
+        $preparedattachments = [
+            ['filePath' => '/foo/bar/baz', 'remoteName' => 'image.jpg']
+        ];
+
+         $messageBuilder = $this->getMockBuilder('Mailgun\Messages\BatchMessage')
+            ->disableOriginalConstructor()
+            ->setMethods(['finalize'])
+            ->getMock();
+        // We expect that finalize() will be called to send any remaining messages in the queue
+        $messageBuilder->expects($this->once())
+            ->method('finalize');
+
+        $client = $this->getMock('Mailgun\Mailgun', ['BatchMessage']);
+        // We expect that sendMessage() will fetch the message builder from the Mailgun client, and
+        // we use this point to inject our mock message builder
+        $client->expects($this->once())
+            ->method('BatchMessage')
+            ->with($this->equalTo($domain))
+            ->will($this->returnValue($messageBuilder));
+
+        $mailer = $this->getMock(
+            'Kinglozzer\SilverStripeMailgunner\Mailer',
+            ['getMailgunClient', 'buildMessage', 'prepareAttachments', 'closeTempFileHandles']
+        );
+        // We inject our mock Mailgun client while asserting that sendMessage() does request it
+        $mailer->expects($this->once())
+            ->method('getMailgunClient')
+            ->will($this->returnValue($client));
+        // We've got attachments, so we assert that sendMessage() passes them off to
+        // prepareAttachments() and specify a mock "prepared" return value
+        $mailer->expects($this->once())
+            ->method('prepareAttachments')
+            ->with($this->equalTo($attachments))
+            ->will($this->returnValue($preparedattachments));
+        // We expect that sendMessage() will pass everything off to the buildMessage() method
+        $mailer->expects($this->once())
+            ->method('buildMessage')
+            ->with(
+                $this->equalTo($messageBuilder),
+                $this->equalTo($to),
+                $this->equalTo($from),
+                $this->equalTo($subject),
+                $this->equalTo($content),
+                $this->equalTo($plainContent),
+                $this->equalTo($preparedattachments),
+                $this->equalTo($headers)
+            );
+        // Assert that the mailer attempts to close any remaining open file handles
+        $mailer->expects($this->once())
+            ->method('closeTempFileHandles');
+
+        // Special header to flag that we want to send a "batch message"
+        $headers['X-Mailgunner-Batch-Message'] = true;
+
+        // Let's go!
+        $this->invokeMethod(
+            $mailer,
+            'sendMessage',
+            [$to, $from, $subject, $content, $plainContent, $attachments, $headers]
+        );
+    }
+
     /**
      * @expectedException Exception
      */
