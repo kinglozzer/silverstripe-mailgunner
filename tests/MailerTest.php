@@ -120,12 +120,18 @@ class MailerTest extends \SapphireTest
         Config::inst()->update('Kinglozzer\SilverStripeMailgunner\Mailer', 'api_domain', $domain);
 
         list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
+        $preparedattachments = [
+            ['filePath' => '/foo/bar/baz', 'remoteName' => 'image.jpg']
+        ];
 
-        $messageBuilder = $this->getMock('Mailgun\Messages\MessageBuilder', ['getMessage']);
+        $messageBuilder = $this->getMock('Mailgun\Messages\MessageBuilder', ['getMessage', 'getFiles']);
         // We expect that sendMessage() will fetch the full message text from the builder
         $messageBuilder->expects($this->once())
             ->method('getMessage')
             ->will($this->returnValue('test message'));
+        $messageBuilder->expects($this->once())
+            ->method('getFiles')
+            ->will($this->returnValue('attachedfiles'));
 
         $client = $this->getMock('Mailgun\Mailgun', ['MessageBuilder', 'sendMessage']);
         // We expect that sendMessage() will fetch the message builder from the Mailgun client, and
@@ -140,7 +146,7 @@ class MailerTest extends \SapphireTest
             ->with(
                 $this->equalTo($domain),
                 $this->equalTo('test message'),
-                $this->equalTo(['preparedattachments'])
+                $this->equalTo('attachedfiles')
             );
 
         $mailer = $this->getMock(
@@ -151,6 +157,12 @@ class MailerTest extends \SapphireTest
         $mailer->expects($this->once())
             ->method('getMailgunClient')
             ->will($this->returnValue($client));
+        // We've got attachments, so we assert that sendMessage() passes them off to
+        // prepareAttachments() and specify a mock "prepared" return value
+        $mailer->expects($this->once())
+            ->method('prepareAttachments')
+            ->with($this->equalTo($attachments))
+            ->will($this->returnValue($preparedattachments));
         // We expect that sendMessage() will pass everything off to the buildMessage() method
         $mailer->expects($this->once())
             ->method('buildMessage')
@@ -161,14 +173,9 @@ class MailerTest extends \SapphireTest
                 $this->equalTo($subject),
                 $this->equalTo($content),
                 $this->equalTo($plainContent),
+                $this->equalTo($preparedattachments),
                 $this->equalTo($headers)
             );
-        // We've got attachments, so we assert that sendMessage() passes them off to
-        // prepareAttachments() and specify a mock "prepared" return value
-        $mailer->expects($this->once())
-            ->method('prepareAttachments')
-            ->with($this->equalTo($attachments))
-            ->will($this->returnValue(['preparedattachments']));
         // Assert that the mailer attempts to close any remaining open file handles
         $mailer->expects($this->once())
             ->method('closeTempFileHandles');
@@ -216,6 +223,10 @@ class MailerTest extends \SapphireTest
     public function testBuildMessage()
     {
         list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
+        // Mock "prepared" attachment
+        $attachments = [
+            ['filePath' => '/foo/bar/baz', 'remoteName' => 'image.jpg']
+        ];
 
         $messageBuilder = $this->getMock('Mailgun\Messages\MessageBuilder');
         $messageBuilder->expects($this->once())
@@ -245,6 +256,13 @@ class MailerTest extends \SapphireTest
             ->with($this->equalTo($plainContent));
 
         $messageBuilder->expects($this->once())
+            ->method('addAttachment')
+            ->with(
+                $this->equalTo('/foo/bar/baz'),
+                $this->equalTo('image.jpg')
+            );
+
+        $messageBuilder->expects($this->once())
             ->method('addCcRecipient')
             ->with($this->equalTo($headers['Cc']));
 
@@ -262,7 +280,7 @@ class MailerTest extends \SapphireTest
         $this->invokeMethod(
             new Mailer,
             'buildMessage',
-            [$messageBuilder, $to, $from, $subject, $content, $plainContent, $headers]
+            [$messageBuilder, $to, $from, $subject, $content, $plainContent, $attachments, $headers]
         );
     }
 
@@ -301,10 +319,8 @@ class MailerTest extends \SapphireTest
         ];
 
         $expected = [
-            'attachment' => [
-                ['filePath' => 'tmp/test1.jpg', 'remoteName' => 'test1.jpg'],
-                ['filePath' => 'tmp/test2.jpg', 'remoteName' => 'test2.jpg']
-            ]
+            ['filePath' => 'tmp/test1.jpg', 'remoteName' => 'test1.jpg'],
+            ['filePath' => 'tmp/test2.jpg', 'remoteName' => 'test2.jpg']
         ];
 
         $mailer = $this->getMock('Kinglozzer\SilverStripeMailgunner\Mailer', ['writeToTempFile']);

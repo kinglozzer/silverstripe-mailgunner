@@ -110,15 +110,14 @@ class Mailer extends SilverstripeMailer
     {
         $client = $this->getMailgunClient();
         $messageBuilder = $client->MessageBuilder();
-
-        $this->buildMessage($messageBuilder, $to, $from, $subject, $content, $plainContent, $headers);
-
+        
         if (!empty($attachments)) {
             $attachments = $this->prepareAttachments($attachments);
         }
 
         try {
-            $client->sendMessage($this->config()->api_domain, $messageBuilder->getMessage(), $attachments);
+            $this->buildMessage($messageBuilder, $to, $from, $subject, $content, $plainContent, $attachments, $headers);
+            $client->sendMessage($this->config()->api_domain, $messageBuilder->getMessage(), $messageBuilder->getFiles());
         } catch (\Exception $e) {
             // Close and remove any temp files created for attachments, then let the exception bubble up
             $this->closeTempFileHandles();
@@ -135,9 +134,10 @@ class Mailer extends SilverstripeMailer
      * @param string $subject
      * @param string $content
      * @param string $plainContent
+     * @param string $attachments
      * @param array $headers
      */
-    protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $headers)
+    protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $attachments, $headers)
     {
         // Add base info
         $parsedFrom = $this->parseAddresses($from);
@@ -159,6 +159,13 @@ class Mailer extends SilverstripeMailer
         // Plain text content (if not empty)
         if ($plainContent) {
             $builder->setTextBody($plainContent);
+        }
+
+        // Add attachments
+        if (!empty($attachments)) {
+            foreach ($attachments as $attachment) {
+                $builder->addAttachment($attachment['filePath'], $attachment['remoteName']);
+            }
         }
 
         // Parse Cc & Bcc headers out if they're set
@@ -243,7 +250,7 @@ class Mailer extends SilverstripeMailer
             ];
         }
 
-        return ['attachment' => $prepared];
+        return $prepared;
     }
 
     /**
