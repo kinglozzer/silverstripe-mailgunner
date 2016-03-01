@@ -140,7 +140,15 @@ class Mailer extends SilverstripeMailer
     protected function buildMessage(MessageBuilder $builder, $to, $from, $subject, $content, $plainContent, $headers)
     {
         // Add base info
-        $builder->setFromAddress($from);
+        $parsedFrom = $this->parseAddresses($from);
+        if (!empty($parsedFrom)) {
+            foreach ($parsedFrom as $email => $name) {
+                $builder->setFromAddress($email, ['full_name' => $name]);
+            }
+        } else {
+            $builder->setFromAddress($from);
+        }
+        
         $builder->setSubject($subject);
 
         // HTML content (if not empty)
@@ -154,14 +162,14 @@ class Mailer extends SilverstripeMailer
         }
 
         // Parse Cc & Bcc headers out if they're set
-        $ccAddresses = $bccAddresses = [];
+        $ccAddresses = $bccAddresses = '';
         if (isset($headers['Cc'])) {
-            $ccAddresses = explode(', ', $headers['Cc']);
+            $ccAddresses = $headers['Cc'];
             unset($headers['Cc']);
         }
 
         if (isset($headers['Bcc'])) {
-            $bccAddresses = explode(', ', $headers['Bcc']);
+            $bccAddresses = $headers['Bcc'];
             unset($headers['Bcc']);
         }
 
@@ -171,15 +179,46 @@ class Mailer extends SilverstripeMailer
         }
 
         // Add recipients
-        $builder->addToRecipient($to);
-
-        foreach ($ccAddresses as $ccAddress) {
-            $builder->addCcRecipient($ccAddress);
+        $to = $this->parseAddresses($to);
+        foreach ($to as $email => $name) {
+            $builder->addToRecipient($email, ['full_name' => $name]);
         }
 
-        foreach ($bccAddresses as $bccAddress) {
-            $builder->addBccRecipient($bccAddress);
+        $ccAddresses = $this->parseAddresses($ccAddresses);
+        foreach ($ccAddresses as $email => $name) {
+            $builder->addCcRecipient($email, ['full_name' => $name]);
         }
+
+        $bccAddresses = $this->parseAddresses($bccAddresses);
+        foreach ($bccAddresses as $email => $name) {
+            $builder->addBccRecipient($email, ['full_name' => $name]);
+        }
+    }
+
+    /**
+     * @todo This can't deal with mismatched quotes, or commas in names.
+     *       E.g. "Smith, John" <john.smith@example.com> or "John O'smith" <john.osmith@example.com>
+     * @param string
+     * @return array
+     */
+    protected function parseAddresses($addresses)
+    {
+        $parsed = [];
+
+        $expr = '/\s*["\']?([^><,;"\']+)["\']?\s*((?:<[^><,]+>)?)\s*/';
+        if (preg_match_all($expr, $addresses, $matches, PREG_SET_ORDER) > 0) {
+            foreach ($matches as $result) {
+                if (empty($result[2])) {
+                    // If we couldn't parse out a name
+                    $parsed[$result[1]] = '';
+                } else {
+                    $email = trim($result[2], '<>');
+                    $parsed[$email] = trim($result[1]);
+                }
+            }
+        }
+
+        return $parsed;
     }
 
     /**

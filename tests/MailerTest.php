@@ -55,8 +55,8 @@ class MailerTest extends \SapphireTest
     protected function getMockEmail()
     {
         return [
-            'foo@bar.com', // to
-            'baz@bam.com', // from
+            '"Foo Smith" <foo@bar.com>', // to
+            '"Baz Smith" <baz@bam.com>', // from
             'Important question', // subject
             '<p>How much foo could a foo bar baz if a baz bam could bar foo?</p>', // html content
             'How much foo could a foo bar baz if a baz bam could bar foo?', // plain text content
@@ -220,11 +220,17 @@ class MailerTest extends \SapphireTest
         $messageBuilder = $this->getMock('Mailgun\Messages\MessageBuilder');
         $messageBuilder->expects($this->once())
             ->method('addToRecipient')
-            ->with($this->equalTo($to));
+            ->with(
+                $this->equalTo('foo@bar.com'),
+                $this->equalTo(['full_name' => 'Foo Smith'])
+            );
 
         $messageBuilder->expects($this->once())
             ->method('setFromAddress')
-            ->with($this->equalTo($from));
+            ->with(
+                $this->equalTo('baz@bam.com'),
+                $this->equalTo(['full_name' => 'Baz Smith'])
+            );
 
         $messageBuilder->expects($this->once())
             ->method('setSubject')
@@ -258,6 +264,33 @@ class MailerTest extends \SapphireTest
             'buildMessage',
             [$messageBuilder, $to, $from, $subject, $content, $plainContent, $headers]
         );
+    }
+
+    public function testParseAddresses()
+    {
+        $mailer = new Mailer;
+
+        $parsed = $this->invokeMethod($mailer, 'parseAddresses', ['joe.bloggs@example.com']);
+        $this->assertEquals(['joe.bloggs@example.com' => ''], $parsed);
+
+        $parsed = $this->invokeMethod($mailer, 'parseAddresses', ['Joe Bloggs <joe.bloggs@example.com>']);
+        $this->assertEquals(['joe.bloggs@example.com' => 'Joe Bloggs'], $parsed);
+
+        $parsed = $this->invokeMethod($mailer, 'parseAddresses', ['joe.bloggs@example.com, john.smith@example.com']);
+        $this->assertEquals(['joe.bloggs@example.com' => '', 'john.smith@example.com' => ''], $parsed);
+
+        // Test all the different formats
+        $raw = '"Joe Bloggs"<joe.bloggs@example.com>; John Smith <john.smith@example.com>';
+        $raw .= ', \'James\'<james@example.com>; foo@example.com,<bar@example.com>';
+        $expected = [
+            'joe.bloggs@example.com' => 'Joe Bloggs',
+            'john.smith@example.com' => 'John Smith',
+            'james@example.com' => 'James',
+            'foo@example.com' => '',
+            'bar@example.com' => ''
+        ];
+        $actual = $this->invokeMethod($mailer, 'parseAddresses', [$raw]);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testPrepareAttachments()
