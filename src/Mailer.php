@@ -86,7 +86,7 @@ class Mailer extends SilverstripeMailer
      */
     public function sendPlain($to, $from, $subject, $plainContent, $attachments = [], $headers = [])
     {
-        $this->sendMessage($to, $from, $subject, $htmlContent = '', $plainContent, $attachments, $headers);
+        return $this->sendMessage($to, $from, $subject, $htmlContent = '', $plainContent, $attachments, $headers);
     }
 
     /**
@@ -94,7 +94,7 @@ class Mailer extends SilverstripeMailer
      */
     public function sendHTML($to, $from, $subject, $htmlContent, $attachments = [], $headers = [], $plainContent = '')
     {
-        $this->sendMessage($to, $from, $subject, $htmlContent, $plainContent, $attachments, $headers);
+        return $this->sendMessage($to, $from, $subject, $htmlContent, $plainContent, $attachments, $headers);
     }
 
     /**
@@ -130,10 +130,12 @@ class Mailer extends SilverstripeMailer
         } catch (\Exception $e) {
             // Close and remove any temp files created for attachments, then let the exception bubble up
             $this->closeTempFileHandles();
-            throw $e;
+            return false;
         }
 
         $this->closeTempFileHandles();
+        // this is a stupid API :(
+        return array($to, $subject, $content, $headers, '');
     }
 
     /**
