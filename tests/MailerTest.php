@@ -256,9 +256,6 @@ class MailerTest extends \SapphireTest
         );
     }
 
-    /**
-     * @expectedException Exception
-     */
     public function testSendMessageExceptionClosesHandles()
     {
         list($to, $from, $subject, $content, $plainContent, $attachments, $headers) = $this->getMockEmail();
@@ -281,11 +278,13 @@ class MailerTest extends \SapphireTest
         $mailer->expects($this->once())
             ->method('closeTempFileHandles');
 
-        $this->invokeMethod(
+        $response = $this->invokeMethod(
             $mailer,
             'sendMessage',
             [$to, $from, $subject, $content, $plainContent, $attachments, $headers]
         );
+
+        $this->assertFalse($response);
     }
 
     public function testBuildMessage()
