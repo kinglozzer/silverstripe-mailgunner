@@ -2,9 +2,13 @@
 
 namespace Kinglozzer\SilverStripeMailgunner;
 
+use Debug;
+use Exception;
 use Mailer as SilverstripeMailer;
 use Mailgun\Mailgun;
+use Mailgun\Messages\BatchMessage;
 use Mailgun\Messages\MessageBuilder;
+use SS_Log;
 
 class Mailer extends SilverstripeMailer
 {
@@ -122,18 +126,18 @@ class Mailer extends SilverstripeMailer
         try {
             $this->buildMessage($builder, $to, $from, $subject, $content, $plainContent, $attachments, $headers);
 
-            if ($builder instanceof \Mailgun\Messages\BatchMessage) {
+            if ($builder instanceof BatchMessage) {
                 $builder->finalize();
             } else {
                 $client->sendMessage($domain, $builder->getMessage(), $builder->getFiles());
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Close and remove any temp files created for attachments
             $this->closeTempFileHandles();
             // Throwing the exception would break SilverStripe's Email API expectations, so we log
             // errors and show a message (which is hidden in live mode)
-            \SS_Log::log($e->getMessage(), SS_Log::ERR);
-            \Debug::message($e->getMessage());
+            SS_Log::log('Mailgun error: ' . $e->getMessage(), SS_Log::ERR);
+            Debug::message('Mailgun error: ' . $e->getMessage());
 
             return false;
         }
