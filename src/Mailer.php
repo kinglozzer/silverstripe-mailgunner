@@ -128,13 +128,19 @@ class Mailer extends SilverstripeMailer
                 $client->sendMessage($domain, $builder->getMessage(), $builder->getFiles());
             }
         } catch (\Exception $e) {
-            // Close and remove any temp files created for attachments, then let the exception bubble up
+            // Close and remove any temp files created for attachments
             $this->closeTempFileHandles();
+            // Throwing the exception would break SilverStripe's Email API expectations, so we log
+            // errors and show a message (which is hidden in live mode)
+            \SS_Log::log($e->getMessage(), SS_Log::ERR);
+            \Debug::message($e->getMessage());
+
             return false;
         }
 
         $this->closeTempFileHandles();
-        // this is a stupid API :(
+
+        // This is a stupid API :(
         return array($to, $subject, $content, $headers, '');
     }
 
@@ -163,7 +169,7 @@ class Mailer extends SilverstripeMailer
         foreach ($parsedFrom as $email => $name) {
             $builder->setFromAddress($email, ['full_name' => $name]);
         }
-        
+
         $builder->setSubject($subject);
         $builder->setHtmlBody($content);
         $builder->setTextBody($plainContent);
@@ -242,10 +248,10 @@ class Mailer extends SilverstripeMailer
     protected function prepareAttachments(array $attachments)
     {
         $prepared = [];
-            
+
         foreach ($attachments as $attachment) {
             $tempFile = $this->writeToTempFile($attachment['contents']);
-            
+
             $prepared[] = [
                 'filePath' => $tempFile,
                 'remoteName' => $attachment['filename']
