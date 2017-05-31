@@ -11,8 +11,10 @@ A SilverStripe `Mailer` class to send emails via the [Mailgun](http://www.mailgu
 ## Installation:
 
 ```bash
-$ composer require kinglozzer/silverstripe-mailgunner:^1.0
+$ composer require kinglozzer/silverstripe-mailgunner:^3.0 php-http/curl-client guzzlehttp/psr7
 ```
+
+Note that the Mailgun PHP library uses HTTPlug, so you can switch out the HTTP adapter for another one if you desire. More info is available [here](http://docs.php-http.org/en/latest/httplug/users.html).
 
 ## Configuration:
 
@@ -57,7 +59,7 @@ $email->send();
 
 ## SilverStripe version compatiblity:
 
-This module has only been tested with SilverStripe 3.2, but may work with previous versions. In older versions of SilverStripe, you will need to specify the `Mailer` implementation to use in `_config.php`:
+This module has only been tested with SilverStripe 3.2+, but should work with previous versions. In older versions of SilverStripe, you will need to specify the `Mailer` implementation to use in `_config.php`:
 
 ```php
 <?php
