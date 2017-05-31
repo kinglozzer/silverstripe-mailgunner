@@ -22,12 +22,6 @@ class Mailer extends SilverstripeMailer
      * @var string
      * @config
      */
-    private static $api_endpoint = 'api.mailgun.net';
-
-    /**
-     * @var string
-     * @config
-     */
     private static $api_key = '';
 
     /**
@@ -59,12 +53,11 @@ class Mailer extends SilverstripeMailer
     public function __construct()
     {
         $config = $this->config();
-        $this->setMailgunClient(new Mailgun(
-            $config->api_key,
-            $config->api_endpoint,
-            $config->api_version,
-            $config->api_ssl
-        ));
+        $this->setMailgunClient(Mailgun::create($config->api_key));
+
+        // @todo - Remove, these are deprecated
+        $this->mailgunClient->setApiVersion($config->api_version);
+        $this->mailgunClient->setSslEnabled($config->api_ssl);
     }
 
     /**
