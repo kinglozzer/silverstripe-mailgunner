@@ -39,6 +39,8 @@ Kinglozzer\SilverStripeMailgunner\Mailer:
   api_version: '8932206e'
 ```
 
+**Note**: make sure that you always provide a “from” address, and/or have set the `Email.admin_email` configuration value.
+
 ## Batch messages:
 
 You can send an email to a group of recipients via a single API call (without using Cc or Bcc) using Mailgun’s [batch sending](https://documentation.mailgun.com/user_manual.html#batch-sending) functionality. This tells Mailgun to send each recipient an email with only their name in the `to` field. Not using this functionality would result in _all_ recipients’ email addresses being displayed in the `to` field.
