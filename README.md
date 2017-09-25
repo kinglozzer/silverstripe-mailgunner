@@ -6,7 +6,7 @@
 [![Version](http://img.shields.io/packagist/v/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](https://packagist.org/packages/kinglozzer/silverstripe-mailgunner)
 [![License](http://img.shields.io/packagist/l/kinglozzer/silverstripe-mailgunner.svg?style=flat-square)](LICENSE.md)
 
-A SilverStripe `Mailer` class to send emails via the [Mailgun](http://www.mailgun.com/) API.
+A SilverStripe `Mailer` class to send emails via the [Mailgun](https://www.mailgun.com/) API.
 
 ## Installation:
 
@@ -34,9 +34,8 @@ Only:
 ---
 # Get your own Postbin ID by visiting http://bin.mailgun.net
 Kinglozzer\SilverStripeMailgunner\Mailer:
-  api_endpoint: 'bin.mailgun.net'
-  api_ssl: false
-  api_version: '8932206e'
+  api_endpoint: 'http://bin.mailgun.net/62e69d41'
+  debug: true
 ```
 
 **Note**: make sure that you always provide a “from” address, and/or have set the `Email.admin_email` configuration value.

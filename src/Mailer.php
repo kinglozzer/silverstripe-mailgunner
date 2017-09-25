@@ -5,11 +5,12 @@ namespace Kinglozzer\SilverStripeMailgunner;
 use Debug;
 use Exception;
 use Mailer as SilverstripeMailer;
+use Mailgun\HttpClientConfigurator;
 use Mailgun\Mailgun;
 use Mailgun\Messages\BatchMessage;
 use Mailgun\Messages\MessageBuilder;
-use SapphireTest;
 use SS_Log;
+use SapphireTest;
 
 class Mailer extends SilverstripeMailer
 {
@@ -23,19 +24,19 @@ class Mailer extends SilverstripeMailer
      * @var string
      * @config
      */
+    private static $api_endpoint = '';
+
+    /**
+     * @var string
+     * @config
+     */
     private static $api_key = '';
 
     /**
      * @var boolean
      * @config
      */
-    private static $api_ssl = true;
-
-    /**
-     * @var string
-     * @config
-     */
-    private static $api_version = 'v3';
+    private static $debug = false;
 
     /**
      * An array of temporary file handles opened to store attachments
@@ -54,11 +55,15 @@ class Mailer extends SilverstripeMailer
     public function __construct()
     {
         $config = $this->config();
-        $this->setMailgunClient(Mailgun::create($config->api_key));
+        $configurator = new HttpClientConfigurator();
+        $configurator->setApiKey($config->api_key);
+        $configurator->setDebug($config->debug);
 
-        // @todo - Remove, these are deprecated
-        $this->mailgunClient->setApiVersion($config->api_version);
-        $this->mailgunClient->setSslEnabled($config->api_ssl);
+        if ($config->api_endpoint) {
+            $configurator->setEndpoint($config->api_endpoint);
+        }
+
+        $this->setMailgunClient(Mailgun::configure($configurator));
     }
 
     /**
@@ -141,7 +146,7 @@ class Mailer extends SilverstripeMailer
         $this->closeTempFileHandles();
 
         // This is a stupid API :(
-        return array($to, $subject, $content, $headers, '');
+        return [$to, $subject, $content, $headers, ''];
     }
 
     /**
