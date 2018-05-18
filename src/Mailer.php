@@ -2,6 +2,7 @@
 
 namespace Kinglozzer\SilverStripeMailgunner;
 
+use Convert;
 use Debug;
 use Exception;
 use Mailer as SilverstripeMailer;
@@ -173,6 +174,10 @@ class Mailer extends SilverstripeMailer
         $parsedFrom = $this->parseAddresses($from);
         foreach ($parsedFrom as $email => $name) {
             $builder->setFromAddress($email, ['full_name' => $name]);
+        }
+
+        if (empty($plainContent)) {
+            $plainContent = Convert::xml2raw($content);
         }
 
         $builder->setSubject($subject);
